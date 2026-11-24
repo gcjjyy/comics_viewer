@@ -1,0 +1,13 @@
+:root {
+  --bg: #16171b;
+  --bg-2: #1b1c21;
+  --bg-3: #202228;
+  --line: #2c2f36;
+  --text: #e6e6e6;
+  --text-dim: #9a9ca3;
+  --accent: #e8a33d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; overflow: hidden; }
