@@ -1,0 +1,55 @@
+name: release
+
+# Builds Windows and Linux bundles and attaches them to an existing release.
+# Run from the Actions tab with the release tag (e.g. v0.1.0).
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to upload to
+        required: true
+        default: v0.1.0
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils libdbus-1-dev pkg-config
+
+      - run: bun install --frozen-lockfile
+
+      - name: Tests
+        run: bun run test
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test --lib
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ inputs.tag }}
+          releaseAssetNamePattern: ComicsViewer_[version]_[platform]_[arch][_setup][ext]
+          uploadUpdaterJson: false
+          retryAttempts: 1
