@@ -236,6 +236,36 @@ impl Db {
         Ok(())
     }
 
+    pub fn zip_cached_latest(&self, lib: i64, rel: &str) -> Result<Option<(u64, i64, ZipIndex)>> {
+        let row: Option<(i64, i64, String)> = self
+            .conn
+            .query_row(
+                "SELECT size, mtime, index_json FROM zip_cache WHERE library_id = ?1 AND rel_path = ?2",
+                params![lib, rel],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .optional()?;
+        Ok(row.and_then(|(size, mtime, j)| Some((size as u64, mtime, serde_json::from_str(&j).ok()?))))
+    }
+
+    pub fn book_states(&self, lib: i64) -> Result<std::collections::HashMap<String, BookState>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT volume_key, page, page_count, shift, direction FROM book_state WHERE library_id = ?1")?;
+        let rows = stmt.query_map([lib], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                BookState {
+                    page: r.get(1)?,
+                    page_count: r.get(2)?,
+                    shift: r.get::<_, i64>(3)? != 0,
+                    direction: dir_from(r.get(4)?),
+                },
+            ))
+        })?;
+        rows.collect()
+    }
+
     pub fn works_cached(&self, lib: i64) -> Result<Option<Vec<Work>>> {
         let json: Option<String> = self
             .conn
@@ -345,6 +375,27 @@ mod tests {
         assert_eq!(db.zip_index_cached(lib, "a.zip", 10, 5).unwrap(), Some(idx));
         assert_eq!(db.zip_index_cached(lib, "a.zip", 11, 5).unwrap(), None);
         assert_eq!(db.zip_index_cached(lib, "a.zip", 10, 6).unwrap(), None);
+    }
+
+    #[test]
+    fn zip_cached_latest_ignores_stat() {
+        let (_d, db) = db();
+        let lib = db.add_library(LibraryKind::Local, "a", None, "/a").unwrap();
+        assert_eq!(db.zip_cached_latest(lib, "a.zip").unwrap(), None);
+        db.put_zip_index(lib, "a.zip", 10, 5, &ZipIndex::default()).unwrap();
+        assert_eq!(db.zip_cached_latest(lib, "a.zip").unwrap(), Some((10, 5, ZipIndex::default())));
+    }
+
+    #[test]
+    fn book_states_for_library() {
+        let (_d, db) = db();
+        let a = db.add_library(LibraryKind::Local, "a", None, "/a").unwrap();
+        let b = db.add_library(LibraryKind::Local, "b", None, "/b").unwrap();
+        db.save_page(a, "k1", 2, 9).unwrap();
+        db.save_page(b, "k2", 1, 9).unwrap();
+        let m = db.book_states(a).unwrap();
+        assert_eq!(m.len(), 1);
+        assert_eq!(m["k1"].page, 2);
     }
 
     #[test]
