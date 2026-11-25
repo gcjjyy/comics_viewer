@@ -26,7 +26,7 @@ ZIP으로 묶은 만화책을 책장처럼 정리해서 읽는 데스크톱 앱�
 | 운영체제 | 파일 |
 |---|---|
 | macOS (Apple Silicon) | `ComicsViewer_…_aarch64.dmg` |
-| Windows (64비트) | `ComicsViewer_…_x64-setup.exe` 또는 `.msi` |
+| Windows (64비트) | `ComicsViewer_…_x64_setup.exe` 또는 `.msi` |
 | Linux (64비트) | `.AppImage`, `.deb`, `.rpm` 중 하나 |
 
 개발자 서명을 하지 않은 앱이라 처음 실행할 때 운영체제가 막을 수 있습니다.
