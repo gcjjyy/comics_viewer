@@ -1,5 +1,7 @@
+pub mod blockcache;
 pub mod encoding;
 pub mod natsort;
+pub mod source;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
