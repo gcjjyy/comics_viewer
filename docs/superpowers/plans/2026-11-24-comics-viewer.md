@@ -171,7 +171,7 @@ assert_eq!(idx.volumes[1].pages.iter().map(|p| &p.name).collect::<Vec<_>>(),
 
 - [ ] **Step 2:** `cargo test archive` → FAIL.
 - [ ] **Step 3:** 구현. `zip::ZipArchive::new` 후 `by_index_raw(i)`의 `name_raw()`와 UTF-8 플래그(zip 9.x API는 context7로 확인)로 이름 디코딩. 디렉터리 엔트리 제외.
-- [ ] **Step 4:** `cargo test archive` → PASS. 추가로 `#[ignore]` 테스트 `sample_folder_indexes`: 환경변수 `COMICS_SAMPLE_DIR`이 있으면 `슬램덩크 완전판.zip` 권 24개, `킹덤/킹덤 526~635화.zip` 권 110개, `생존게임/생존게임 01.zip` 권 1개를 확인. `COMICS_SAMPLE_DIR="/Users/gcjjyy/Downloads/QuickBASIC 4.5/만화" cargo test archive -- --ignored` → PASS.
+- [ ] **Step 4:** `cargo test archive` → PASS. 추가로 `#[ignore]` 테스트 `sample_folder_indexes`: 환경변수 `COMICS_SAMPLE_DIR`이 있으면 `슬램덩크 완전판.zip` 권 24개, `킹덤/킹덤 526~635화.zip` 권 110개, `생존게임/생존게임 01.zip` 권 1개를 확인. `COMICS_SAMPLE_DIR="<로컬 샘플 폴더>" cargo test archive -- --ignored` → PASS.
 - [ ] **Step 5:** 커밋 `feat: zip index with volume detection and cp949 names`
 
 ### Task 4: 서재 스캔과 작품·권 묶기
@@ -266,7 +266,7 @@ assert_eq!(resolve(Rtl, None, None, None), Rtl);
 - [ ] **Step 1: 실패하는 테스트** — `commands.rs`의 순수 로직을 분리한 `fn neighbor_keys(works: &[Work], key: &str) -> (Option<String>, Option<String>)` 테스트: 작품 안에서 앞/뒤 권, 첫 권의 prev는 None, 마지막 권의 next는 None, 없는 key는 (None, None).
 - [ ] **Step 2:** `cargo test neighbor_keys` → FAIL.
 - [ ] **Step 3:** 구현 + `lib.rs`에 상태·커맨드·프로토콜·dialog 플러그인 등록. capabilities에 dialog open 권한.
-- [ ] **Step 4:** `cargo test` 전체 PASS. 수동 확인: `bun run tauri dev`, 개발자 도구 콘솔에서 `__TAURI__.core.invoke('add_local_library',{path:'/Users/gcjjyy/Downloads/QuickBASIC 4.5/만화'})` → `list_works` 결과에 `슬램덩크 완전판` 24권, `cover_url`을 `<img>`로 열면 표지가 보임.
+- [ ] **Step 4:** `cargo test` 전체 PASS. 수동 확인: `bun run tauri dev`, 개발자 도구 콘솔에서 `__TAURI__.core.invoke('add_local_library',{path:'<로컬 샘플 폴더>'})` → `list_works` 결과에 `슬램덩크 완전판` 24권, `cover_url`을 `<img>`로 열면 표지가 보임.
 - [ ] **Step 5:** 커밋 `feat: commands, comic:// protocol, thumbnails`
 
 ### Task 7: 책장 화면 (A안)

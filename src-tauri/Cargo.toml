@@ -1,8 +1,10 @@
 [package]
 name = "comics-viewer"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Desktop comic book viewer for ZIP comics on local folders and SSH (SFTP) servers"
+authors = ["gcjjyy"]
+license = "MIT"
+repository = "https://github.com/gcjjyy/comics_viewer"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

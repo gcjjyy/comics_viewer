@@ -233,7 +233,11 @@ export default function App() {
           <Sidebar
             libraries={libraries}
             selection={selection}
-            onSelect={setSelection}
+            onSelect={(s) => {
+              setWork(null);
+              setVolumes(null);
+              setSelection(s);
+            }}
             onAdd={() => setAdding(true)}
             onLibraryMenu={libraryMenu}
           />
