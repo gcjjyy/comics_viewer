@@ -1,4 +1,4 @@
-# 만화 뷰어
+# 만화 뷰어 (Comics Viewer)
 
 ZIP으로 묶은 만화책을 책장처럼 정리해서 읽는 데스크톱 앱입니다. 내 컴퓨터의 폴더뿐 아니라 SSH로 접속하는 서버의 폴더도 서재로 추가할 수 있습니다. [Tauri 2](https://tauri.app)(Rust + React)로 만들었습니다.
 
@@ -19,15 +19,25 @@ ZIP으로 묶은 만화책을 책장처럼 정리해서 읽는 데스크톱 앱�
 
 스크린샷의 만화는 데모용으로 AI가 그린 가상의 작품입니다.
 
-## 설치 (macOS)
+## 설치
 
-[Releases](https://github.com/gcjjyy/comics_viewer/releases)에서 `.dmg`를 받아 `만화 뷰어`를 응용 프로그램 폴더로 옮깁니다. Apple Silicon(M1 이상)용입니다.
+[Releases](https://github.com/gcjjyy/comics_viewer/releases)에서 운영체제에 맞는 파일을 받습니다.
 
-개발자 서명을 하지 않은 앱이라 처음 열 때 macOS가 실행을 막습니다. 터미널에서 아래 명령을 한 번 실행한 뒤 여세요.
+| 운영체제 | 파일 |
+|---|---|
+| macOS (Apple Silicon) | `ComicsViewer_…_aarch64.dmg` |
+| Windows (64비트) | `ComicsViewer_…_x64-setup.exe` 또는 `.msi` |
+| Linux (64비트) | `.AppImage`, `.deb`, `.rpm` 중 하나 |
 
-```sh
-xattr -dr com.apple.quarantine "/Applications/만화 뷰어.app"
-```
+개발자 서명을 하지 않은 앱이라 처음 실행할 때 운영체제가 막을 수 있습니다.
+
+- **macOS**: `Comics Viewer`를 응용 프로그램 폴더로 옮긴 뒤 터미널에서 아래 명령을 한 번 실행하고 여세요.
+
+  ```sh
+  xattr -dr com.apple.quarantine "/Applications/Comics Viewer.app"
+  ```
+
+- **Windows**: "Windows의 PC 보호" 창이 뜨면 `추가 정보` → `실행`을 누르세요.
 
 ## 사용법
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "만화 뷰어",
+  "productName": "Comics Viewer",
   "version": "0.1.0",
   "identifier": "dev.local.comicsviewer",
   "build": {
