@@ -118,3 +118,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .fingerprint { display: block; padding: 8px; border-radius: 6px; background: var(--bg-2); word-break: break-all; }
 .page-error { flex-direction: column; gap: 10px; }
 .remote-list button.folder::before { content: "📁"; margin-right: 6px; }
+
+/* reader shortcut help */
+.keys { width: 100%; border-collapse: collapse; }
+.keys td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.keys tr:last-child td { border-bottom: none; }
+.keys td:first-child { width: 46%; }
+.keys kbd { display: inline-block; padding: 2px 7px; border-radius: 4px; background: #2c2f36; border: 1px solid #3a3d45; font-family: inherit; font-size: 12px; }

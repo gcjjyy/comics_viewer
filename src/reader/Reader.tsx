@@ -4,6 +4,7 @@ import { api, type Direction, type OpenedVolume } from "../api";
 import { Progress } from "../shelf/Progress";
 import { actionForClick, actionForKey, actionForWheel, type Action } from "./keys";
 import { buildSpreads, screenOrder, spreadIndexOf, type Dim } from "./spread";
+import { ShortcutHelp } from "./ShortcutHelp";
 import { usePrefetch } from "./usePrefetch";
 
 type Mode = "spread" | "single";
@@ -37,6 +38,7 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const [reconnecting, setReconnecting] = useState(false);
+  const [help, setHelp] = useState(false);
   const hideTimer = useRef<number | undefined>(undefined);
   const wheelLock = useRef(0);
 
@@ -133,6 +135,11 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
   useEffect(() => {
     const onKey = async (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "?") return setHelp((h) => !h);
+      if (help) {
+        if (e.key === "Escape") setHelp(false);
+        return;
+      }
       const a = actionForKey(e, dir);
       if (a) {
         e.preventDefault();
@@ -153,7 +160,7 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dir, go, toggleDir, toggleMode, toggleShift, toggleFullscreen, onClose]);
+  }, [dir, help, go, toggleDir, toggleMode, toggleShift, toggleFullscreen, onClose]);
 
   const showBars = () => {
     setBarsVisible(true);
@@ -262,6 +269,7 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
           <button className={`chip ${shift ? "on" : ""}`} onClick={toggleShift} title="펼침 짝이 어긋났을 때 한 쪽 밀기 (A)">짝 밀기</button>
         )}
         <button className="chip" onClick={toggleFullscreen} title="전체 화면 (F)">전체 화면</button>
+        <button className="chip" onClick={() => setHelp(true)} title="단축키 (?)">단축키</button>
       </div>
 
       <div className={`bar bottom ${barsVisible ? "" : "hidden"}`} onMouseEnter={showBars}>
@@ -274,6 +282,7 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
           {current.map((p) => p + 1).join("–")} / {count}쪽
         </span>
       </div>
+      {help && <ShortcutHelp direction={dir} onClose={() => setHelp(false)} />}
     </div>
   );
 }
