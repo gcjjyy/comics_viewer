@@ -1,5 +1,7 @@
 pub mod archive;
 pub mod blockcache;
+pub mod db;
+pub mod direction;
 pub mod encoding;
 pub mod library;
 pub mod natsort;
