@@ -33,6 +33,7 @@ describe("SshPromptDialog", () => {
   it("sends the password with remember", async () => {
     render(<SshPromptDialog />);
     await send({ id: 3, kind: "password" });
+    expect(screen.getByText("nas 로그인")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "pw" } });
     fireEvent.click(screen.getByLabelText("키체인에 저장"));
     fireEvent.click(screen.getByRole("button", { name: "확인" }));

@@ -16,7 +16,7 @@ describe("RemoteBrowser", () => {
   it("starts at the login folder, enters folders, goes up, and picks", async () => {
     const onPick = vi.fn();
     await act(async () => render(<RemoteBrowser host="nas" onPick={onPick} />));
-    expect(screen.getByText("/home/me")).toBeTruthy();
+    expect((screen.getByLabelText("경로") as HTMLInputElement).value).toBe("/home/me");
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "comics" })));
     expect(list).toHaveBeenLastCalledWith("nas", "/home/me/comics");
     expect(screen.getByText(/ZIP 2개/)).toBeTruthy();
@@ -27,9 +27,20 @@ describe("RemoteBrowser", () => {
     expect(list).toHaveBeenLastCalledWith("nas", "/home");
   });
 
+  it("goes to a typed path on Enter", async () => {
+    await act(async () => render(<RemoteBrowser host="nas" onPick={() => {}} />));
+    const input = screen.getByLabelText("경로");
+    fireEvent.change(input, { target: { value: "/home/me/comics" } });
+    await act(async () => fireEvent.keyDown(input, { key: "Enter" }));
+    expect(list).toHaveBeenLastCalledWith("nas", "/home/me/comics");
+    expect((screen.getByLabelText("경로") as HTMLInputElement).value).toBe("/home/me/comics");
+  });
+
   it("shows the connection error", async () => {
     list.mockRejectedValueOnce("'nas' 서버에 접속하지 못했습니다: timeout");
     await act(async () => render(<RemoteBrowser host="nas" onPick={() => {}} />));
     expect(screen.getByText(/접속하지 못했습니다/)).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "다시 접속" })));
+    expect((screen.getByLabelText("경로") as HTMLInputElement).value).toBe("/home/me");
   });
 });

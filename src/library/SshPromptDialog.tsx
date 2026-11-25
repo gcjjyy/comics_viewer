@@ -36,7 +36,7 @@ export function SshPromptDialog() {
         }}
       >
         <div className="modal-head">
-          <b>{p.host}</b>
+          <b>{p.kind === "hostKey" ? `${p.host} 첫 접속` : `${p.host} 로그인`}</b>
         </div>
         <div className="modal-body">
           {p.kind === "hostKey" ? (

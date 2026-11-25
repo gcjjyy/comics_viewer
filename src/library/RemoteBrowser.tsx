@@ -14,12 +14,15 @@ export function RemoteBrowser({ host, onPick }: Props) {
   const [dir, setDir] = useState<RemoteDir | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [typed, setTyped] = useState("");
 
   const go = async (path: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      setDir(await api.sftpListDir(host, path));
+      const d = await api.sftpListDir(host, path);
+      setDir(d);
+      setTyped(d.path);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -33,7 +36,17 @@ export function RemoteBrowser({ host, onPick }: Props) {
   }, [host]);
 
   if (!dir) {
-    return error ? <p className="error">{error}</p> : <p className="hint">{host}에 접속하는 중…</p>;
+    if (!error) return <p className="hint">{host}에 접속하는 중…</p>;
+    return (
+      <>
+        <p className="error">{error}</p>
+        <div className="modal-actions">
+          <button className="btn" onClick={() => go(null)}>
+            다시 접속
+          </button>
+        </div>
+      </>
+    );
   }
 
   return (
@@ -42,7 +55,15 @@ export function RemoteBrowser({ host, onPick }: Props) {
         <button className="btn" disabled={dir.path === "/" || loading} onClick={() => go(parentOf(dir.path))}>
           상위 폴더
         </button>
-        <code>{dir.path}</code>
+        <input
+          aria-label="경로"
+          value={typed}
+          spellCheck={false}
+          onChange={(e) => setTyped(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && typed.trim()) go(typed.trim());
+          }}
+        />
       </div>
       <ul className="remote-list">
         {dir.folders.map((f) => (

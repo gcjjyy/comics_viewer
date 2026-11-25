@@ -173,7 +173,7 @@ async fn authenticate(ssh: &mut Handle<HostCheck>, p: &HostParams, prompter: Arc
     }
     for _ in 0..3 {
         let Some((pw, remember)) = prompter.ask_secret(SecretKind::Password, p.alias.clone()).await else {
-            return Ok(false);
+            return Err(format!("'{}' 서버 로그인을 취소했습니다.", p.alias));
         };
         match ssh.authenticate_password(user, pw.clone()).await {
             Ok(AuthResult::Success) => {

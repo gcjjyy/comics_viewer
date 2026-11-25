@@ -352,7 +352,9 @@ pub async fn sftp_list_dir(state: St<'_>, host: String, path: Option<String>) ->
             Some(p) => p,
             None => src.canonicalize(".").map_err(err)?,
         };
-        let entries = src.list_dir(path.trim_start_matches('/')).map_err(err)?;
+        let entries = src
+            .list_dir(path.trim_start_matches('/'))
+            .map_err(|e| format!("'{path}' 폴더를 열 수 없습니다 ({e}). 다른 경로를 입력해 보세요."))?;
         let mut folders: Vec<String> =
             entries.iter().filter(|e| e.is_dir && !e.name.starts_with('.')).map(|e| e.name.clone()).collect();
         folders.sort_by(|a, b| crate::natsort::cmp(a, b));
