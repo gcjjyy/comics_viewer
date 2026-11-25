@@ -76,6 +76,8 @@ pub struct OpenedVolume {
     page: u32,
     shift: bool,
     direction: Direction,
+    /// Direction from library/folder/global settings, ignoring this book's own override.
+    inherited_direction: Direction,
     prev_key: Option<String>,
     next_key: Option<String>,
     remote: bool,
@@ -112,13 +114,20 @@ fn find_volume<'a>(works: &'a [Work], key: &str) -> Option<(&'a Work, usize)> {
     works.iter().find_map(|w| w.volumes.iter().position(|v| v.key == key).map(|i| (w, i)))
 }
 
-fn book_direction(s: &AppState, lib: i64, work_id: &str, key: &str) -> Result<(Direction, Option<crate::db::BookState>), String> {
+/// (effective direction, inherited direction without the book override, book state)
+fn book_direction(
+    s: &AppState,
+    lib: i64,
+    work_id: &str,
+    key: &str,
+) -> Result<(Direction, Direction, Option<crate::db::BookState>), String> {
     let db = s.db.lock().unwrap();
     let global = db.global_direction().map_err(err)?;
     let lib_dir = db.libraries().map_err(err)?.into_iter().find(|l| l.id == lib).and_then(|l| l.direction);
     let folder = db.folder_direction(lib, work_id).map_err(err)?;
     let st = db.book_state(lib, key).map_err(err)?;
-    Ok((resolve(global, lib_dir, folder, st.as_ref().and_then(|b| b.direction)), st))
+    let inherited = resolve(global, lib_dir, folder, None);
+    Ok((resolve(global, lib_dir, folder, st.as_ref().and_then(|b| b.direction)), inherited, st))
 }
 
 #[tauri::command]
@@ -226,7 +235,7 @@ pub async fn list_recent(state: St<'_>) -> Result<Vec<RecentView>, String> {
         for r in recent {
             let Ok(works) = s.works(r.library_id) else { continue };
             let Some((work, i)) = find_volume(&works, &r.key) else { continue };
-            let (direction, _) = book_direction(s, r.library_id, &work.id, &r.key)?;
+            let (direction, _, _) = book_direction(s, r.library_id, &work.id, &r.key)?;
             out.push(RecentView {
                 library_id: r.library_id,
                 key: r.key.clone(),
@@ -250,7 +259,7 @@ pub async fn open_volume(state: St<'_>, library_id: i64, key: String) -> Result<
         let works = s.works(library_id)?;
         let (work, i) = find_volume(&works, &key).ok_or("권을 찾을 수 없습니다")?;
         let vol = &work.volumes[i];
-        let (direction, st) = book_direction(s, library_id, &work.id, &key)?;
+        let (direction, inherited_direction, st) = book_direction(s, library_id, &work.id, &key)?;
         let (prev_key, next_key) = neighbor_keys(&works, &key);
         let remote = s
             .db
@@ -272,6 +281,7 @@ pub async fn open_volume(state: St<'_>, library_id: i64, key: String) -> Result<
             page,
             shift: st.is_some_and(|b| b.shift),
             direction,
+            inherited_direction,
             prev_key,
             next_key,
             remote,

@@ -52,6 +52,7 @@ export interface OpenedVolume {
   page: number;
   shift: boolean;
   direction: Direction;
+  inheritedDirection: Direction;
   prevKey: string | null;
   nextKey: string | null;
   remote: boolean;
