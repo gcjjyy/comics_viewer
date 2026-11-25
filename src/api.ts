@@ -63,6 +63,20 @@ export interface LibraryUpdated {
   error: string | null;
 }
 
+export interface RemoteDir {
+  path: string;
+  folders: string[];
+  zipCount: number;
+}
+
+export interface SshPrompt {
+  id: number;
+  kind: "hostKey" | "passphrase" | "password";
+  host: string;
+  fingerprint: string | null;
+  keyPath: string | null;
+}
+
 export type DirectionScope = "global" | "library" | "folder" | "book";
 
 export const api = {
@@ -80,4 +94,10 @@ export const api = {
   setDirection: (scope: DirectionScope, libraryId: number | null, target: string | null, direction: Direction | null) =>
     invoke<void>("set_direction", { scope, libraryId, target, direction }),
   globalDirection: () => invoke<Direction>("global_direction"),
+  listSshHosts: () => invoke<string[]>("list_ssh_hosts"),
+  sftpListDir: (host: string, path: string | null) => invoke<RemoteDir>("sftp_list_dir", { host, path }),
+  addSftpLibrary: (host: string, path: string) => invoke<number>("add_sftp_library", { host, path }),
+  reconnectLibrary: (libraryId: number) => invoke<void>("reconnect_library", { libraryId }),
+  sshPromptReply: (id: number, accept: boolean, secret: string | null, remember: boolean) =>
+    invoke<void>("ssh_prompt_reply", { id, accept, secret, remember }),
 };

@@ -7,6 +7,7 @@ pub mod encoding;
 pub mod keys;
 pub mod library;
 pub mod natsort;
+pub mod prompt_bridge;
 pub mod protocol;
 pub mod source;
 pub mod state;
@@ -28,7 +29,16 @@ pub fn run() {
             std::fs::create_dir_all(&data)?;
             std::fs::create_dir_all(&thumbs)?;
             let db = db::Db::open(&data.join("comics.db"))?;
-            app.manage(Arc::new(state::AppState::new(db, thumbs)));
+            let st = Arc::new(state::AppState::new(db, thumbs));
+            let bridge = prompt_bridge::TauriPrompter::new(app.handle().clone());
+            st.set_remote(state::Remote {
+                prompter: Arc::new(prompt_bridge::Bridge(bridge.clone())),
+                rt: tauri::async_runtime::handle().inner().clone(),
+                home: app.path().home_dir()?,
+                local_user: std::env::var("USER").or_else(|_| std::env::var("USERNAME")).unwrap_or_default(),
+            });
+            app.manage(st);
+            app.manage(bridge);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -44,6 +54,11 @@ pub fn run() {
             commands::set_shift,
             commands::set_direction,
             commands::global_direction,
+            commands::list_ssh_hosts,
+            commands::sftp_list_dir,
+            commands::add_sftp_library,
+            commands::reconnect_library,
+            commands::ssh_prompt_reply,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

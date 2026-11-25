@@ -94,3 +94,27 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .seek .progress { height: 4px; margin: 0; }
 .page-no { color: var(--text-dim); font-size: 11px; min-width: 24px; text-align: center; }
 .page-now { color: var(--text); min-width: 96px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* add library: tabs, ssh hosts, remote folder browser */
+.modal.wide { width: 560px; }
+.tabs { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--line); }
+.tabs button { padding: 6px 12px; color: var(--text-dim); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+.host-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip-btn { height: 26px; padding: 0 10px; border-radius: 13px; background: #2c2f36; color: var(--text); }
+.chip-btn.on { background: var(--accent); color: #1a1a1a; font-weight: 600; }
+.remote-path { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.remote-path code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.remote-list { list-style: none; margin: 0; padding: 4px; height: 260px; overflow-y: auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; }
+.remote-list li.hint { padding: 6px 8px; margin: 0; }
+.remote-list button { width: 100%; text-align: left; padding: 5px 8px; border-radius: 4px; color: var(--text); }
+.remote-list button:hover { background: #2c2f36; }
+.modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.modal-actions .hint { margin: 0 auto 0 0; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field span { color: var(--text-dim); word-break: break-all; }
+.field input { height: 30px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); color: var(--text); }
+.check { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--text-dim); }
+.fingerprint { display: block; padding: 8px; border-radius: 6px; background: var(--bg-2); word-break: break-all; }
+.page-error { flex-direction: column; gap: 10px; }
+.remote-list button.folder::before { content: "📁"; margin-right: 6px; }

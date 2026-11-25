@@ -35,6 +35,8 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
   const [barsVisible, setBarsVisible] = useState(true);
   const [failed, setFailed] = useState<Set<number>>(new Set());
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [reconnecting, setReconnecting] = useState(false);
   const hideTimer = useRef<number | undefined>(undefined);
   const wheelLock = useRef(0);
 
@@ -203,6 +205,19 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
       </div>
     );
   }
+  async function reconnect() {
+    setReconnecting(true);
+    try {
+      await api.reconnectLibrary(libraryId);
+      setFailed(new Set());
+      setRetry((r) => r + 1);
+    } catch (e) {
+      setLoadError(String(e));
+    } finally {
+      setReconnecting(false);
+    }
+  }
+
   if (!vol) return <div className="reader" />;
 
   const shown = screenOrder(current, dir);
@@ -214,10 +229,17 @@ export function Reader({ libraryId, initialKey, onClose }: Props) {
         {shown.map((p) => (
           <div key={p} className={`page ${shown.length === 2 ? "half" : "full"} ${shown.length === 2 ? (p === shown[0] ? "left" : "right") : ""}`}>
             {failed.has(p) ? (
-              <div className="page-error">페이지를 불러오지 못했습니다</div>
+              <div className="page-error" onClick={(e) => e.stopPropagation()}>
+                페이지를 불러오지 못했습니다
+                {vol.remote && (
+                  <button className="btn" disabled={reconnecting} onClick={reconnect}>
+                    {reconnecting ? "연결 중…" : "다시 연결"}
+                  </button>
+                )}
+              </div>
             ) : (
               <img
-                src={vol.pages[p]}
+                src={retry ? `${vol.pages[p]}?r=${retry}` : vol.pages[p]}
                 alt=""
                 draggable={false}
                 onLoad={(e) => onImgLoad(p, e.currentTarget)}

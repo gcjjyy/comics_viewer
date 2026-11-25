@@ -2,6 +2,7 @@ use crate::db::{work_progress, LibraryKind};
 use crate::direction::{resolve, Direction};
 use crate::keys::{comic_url, neighbor_keys, ComicPath};
 use crate::library::Work;
+use crate::source::Source;
 use crate::state::{err, AppState};
 use serde::Serialize;
 use std::sync::Arc;
@@ -327,4 +328,70 @@ pub async fn set_direction(
 #[tauri::command]
 pub async fn global_direction(state: St<'_>) -> Result<Direction, String> {
     blocking(&state, |s| s.db.lock().unwrap().global_direction().map_err(err)).await
+}
+
+#[tauri::command]
+pub async fn list_ssh_hosts(state: St<'_>) -> Result<Vec<String>, String> {
+    blocking(&state, |s| s.ssh_hosts()).await
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteDir {
+    path: String,
+    folders: Vec<String>,
+    zip_count: usize,
+}
+
+/// Lists folders under `path` on `host` (the login folder when `path` is None).
+#[tauri::command]
+pub async fn sftp_list_dir(state: St<'_>, host: String, path: Option<String>) -> Result<RemoteDir, String> {
+    blocking(&state, move |s| {
+        let src = s.ssh(&host)?;
+        let path = match path {
+            Some(p) => p,
+            None => src.canonicalize(".").map_err(err)?,
+        };
+        let entries = src.list_dir(path.trim_start_matches('/')).map_err(err)?;
+        let mut folders: Vec<String> =
+            entries.iter().filter(|e| e.is_dir && !e.name.starts_with('.')).map(|e| e.name.clone()).collect();
+        folders.sort_by(|a, b| crate::natsort::cmp(a, b));
+        let zip_count = entries
+            .iter()
+            .filter(|e| !e.is_dir && { let n = e.name.to_ascii_lowercase(); n.ends_with(".zip") || n.ends_with(".cbz") })
+            .count();
+        Ok(RemoteDir { path, folders, zip_count })
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn add_sftp_library(state: St<'_>, host: String, path: String) -> Result<i64, String> {
+    blocking(&state, move |s| {
+        let name = path.trim_end_matches('/').rsplit('/').next().filter(|n| !n.is_empty()).unwrap_or(&host).to_string();
+        s.db.lock().unwrap().add_library(LibraryKind::Sftp, &name, Some(&host), &path).map_err(err)
+    })
+    .await
+}
+
+/// Drops the library's connection and connects again (asking for credentials if needed).
+#[tauri::command]
+pub async fn reconnect_library(state: St<'_>, library_id: i64) -> Result<(), String> {
+    blocking(&state, move |s| {
+        s.forget(library_id);
+        s.source(library_id).map(|_| ())
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn ssh_prompt_reply(
+    bridge: tauri::State<'_, Arc<crate::prompt_bridge::TauriPrompter>>,
+    id: u64,
+    accept: bool,
+    secret: Option<String>,
+    remember: bool,
+) -> Result<(), String> {
+    bridge.reply(id, crate::prompt_bridge::Reply { accept, secret, remember });
+    Ok(())
 }

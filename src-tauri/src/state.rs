@@ -3,6 +3,9 @@ use crate::db::{Db, LibraryKind};
 use crate::keys::split_key;
 use crate::library::{find_zips, group_works, FoundZip, Work};
 use crate::source::local::LocalSource;
+use crate::source::sftp::config::{list_hosts, resolve};
+use crate::source::sftp::prompt::Prompter;
+use crate::source::sftp::source::SftpSource;
 use crate::source::{ReadSeek, Source};
 use lru::LruCache;
 use std::collections::HashMap;
@@ -41,6 +44,17 @@ pub struct AppState {
     indexes: Mutex<HashMap<(i64, String), Arc<ZipIndex>>>,
     pub thumb_dir: PathBuf,
     pub thumb_gate: Gate,
+    remote: std::sync::OnceLock<Remote>,
+    /// Folder-browsing connections per ssh host, reused when the library is added.
+    browse: Mutex<HashMap<String, Arc<SftpSource>>>,
+}
+
+/// What SSH libraries need from the running app.
+pub struct Remote {
+    pub prompter: Arc<dyn Prompter>,
+    pub rt: tokio::runtime::Handle,
+    pub home: PathBuf,
+    pub local_user: String,
 }
 
 pub fn err<E: std::fmt::Display>(e: E) -> String {
@@ -56,6 +70,8 @@ impl AppState {
             indexes: Mutex::new(HashMap::new()),
             thumb_dir,
             thumb_gate: Gate::new(3),
+            remote: std::sync::OnceLock::new(),
+            browse: Mutex::new(HashMap::new()),
         }
     }
 
@@ -74,15 +90,52 @@ impl AppState {
             .ok_or("서재를 찾을 수 없습니다")?;
         let src: Arc<dyn Source> = match library.kind {
             LibraryKind::Local => Arc::new(LocalSource::new(PathBuf::from(&library.root))),
-            LibraryKind::Sftp => return Err("SSH 서재는 아직 지원하지 않습니다".into()),
+            LibraryKind::Sftp => {
+                let host = library.host.as_deref().unwrap_or_default();
+                Arc::new(self.ssh(host)?.with_root(&library.root))
+            }
         };
         self.sources.lock().unwrap().insert(lib, src.clone());
+        Ok(src)
+    }
+
+    pub fn set_remote(&self, r: Remote) {
+        let _ = self.remote.set(r);
+    }
+
+    fn remote(&self) -> Result<&Remote, String> {
+        self.remote.get().ok_or_else(|| "SSH 연결을 준비하지 못했습니다".to_string())
+    }
+
+    fn ssh_config(&self) -> Result<String, String> {
+        let path = self.remote()?.home.join(".ssh").join("config");
+        Ok(std::fs::read_to_string(path).unwrap_or_default())
+    }
+
+    pub fn ssh_hosts(&self) -> Result<Vec<String>, String> {
+        Ok(list_hosts(&self.ssh_config()?))
+    }
+
+    /// Connection for `host` (an alias from ~/.ssh/config), rooted at "/".
+    pub fn ssh(&self, host: &str) -> Result<Arc<SftpSource>, String> {
+        if let Some(s) = self.browse.lock().unwrap().get(host) {
+            return Ok(s.clone());
+        }
+        let r = self.remote()?;
+        let params = resolve(host, &self.ssh_config()?, &r.home, &r.local_user);
+        let src = Arc::new(SftpSource::new(params, r.home.clone(), String::new(), r.prompter.clone(), r.rt.clone()));
+        src.ensure_connected().map_err(err)?;
+        self.browse.lock().unwrap().insert(host.to_string(), src.clone());
         Ok(src)
     }
 
     /// Drops cached connections and open archives for a library (after errors or removal).
     pub fn forget(&self, lib: i64) {
         self.sources.lock().unwrap().remove(&lib);
+        let host = self.db.lock().unwrap().libraries().ok().and_then(|ls| ls.into_iter().find(|l| l.id == lib)).and_then(|l| l.host);
+        if let Some(h) = host {
+            self.browse.lock().unwrap().remove(&h);
+        }
         let mut a = self.archives.lock().unwrap();
         let stale: Vec<_> = a.iter().filter(|((l, _), _)| *l == lib).map(|(k, _)| k.clone()).collect();
         for k in stale {
