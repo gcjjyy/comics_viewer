@@ -1,6 +1,7 @@
 pub mod archive;
 pub mod blockcache;
 pub mod encoding;
+pub mod library;
 pub mod natsort;
 pub mod source;
 #[cfg(test)]
