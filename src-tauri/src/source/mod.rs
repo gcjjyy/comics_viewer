@@ -1,6 +1,7 @@
 use std::io::{self, Read, Seek};
 
 pub mod local;
+pub mod sftp;
 
 pub trait ReadSeek: Read + Seek + Send {}
 impl<T: Read + Seek + Send> ReadSeek for T {}
