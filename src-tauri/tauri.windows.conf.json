@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "windows": {
+      "wix": { "language": "ko-KR" },
+      "nsis": { "languages": ["Korean"] }
+    }
+  }
+}
